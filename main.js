@@ -3,6 +3,7 @@
 // Estado global da aplicação
 let appState = {
     subjects: [],
+    examEvents: [], // Array de eventos de provas
     currentPage: 'dashboard',
     currentSubjectId: null
 };
@@ -70,6 +71,23 @@ function setupEventListeners() {
         e.preventDefault();
         navigateTo('dashboard');
     });
+
+    // Link do calendário
+    const calendarLink = document.getElementById('calendar-link');
+    calendarLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        navigateTo('calendar');
+    });
+
+    // Modal de evento de prova
+    const examEventModal = document.getElementById('exam-event-modal');
+    const closeExamEventModal = document.getElementById('close-exam-event-modal');
+    const cancelExamEvent = document.getElementById('cancel-exam-event');
+    const examEventForm = document.getElementById('exam-event-form');
+
+    closeExamEventModal.addEventListener('click', () => closeModal('exam-event-modal'));
+    cancelExamEvent.addEventListener('click', () => closeModal('exam-event-modal'));
+    examEventForm.addEventListener('submit', handleExamEventFormSubmit);
 }
 
 // ===== NAVEGAÇÃO =====
@@ -91,6 +109,9 @@ function navigateTo(page, subjectId = null) {
     if (page === 'dashboard') {
         document.getElementById('dashboard-link').classList.add('active');
         renderDashboardPage();
+    } else if (page === 'calendar') {
+        document.getElementById('calendar-link').classList.add('active');
+        renderCalendarPage();
     } else if (page === 'subject-detail') {
         document.querySelector(`[data-subject-id="${subjectId}"]`).classList.add('active');
         renderSubjectDetailPage(subjectId);
@@ -153,16 +174,19 @@ function openSubjectModal(subjectId = null) {
     const title = document.getElementById('subject-modal-title');
     const idInput = document.getElementById('subject-id');
     const nameInput = document.getElementById('subject-name');
+    const colorInput = document.getElementById('subject-color');
 
     if (subjectId) {
         const subject = appState.subjects.find(s => s.id === subjectId);
         title.textContent = 'Editar Matéria';
         idInput.value = subjectId;
         nameInput.value = subject.nome;
+        colorInput.value = subject.cor || '#3b82f6'; // Cor padrão se não existir
     } else {
         title.textContent = 'Adicionar Nova Matéria';
         idInput.value = '';
         nameInput.value = '';
+        colorInput.value = '#3b82f6'; // Cor padrão
     }
 
     modal.classList.add('show');
@@ -197,7 +221,9 @@ async function handleSubjectFormSubmit(e) {
 
     const idInput = document.getElementById('subject-id');
     const nameInput = document.getElementById('subject-name');
+    const colorInput = document.getElementById('subject-color');
     const subjectName = nameInput.value.trim();
+    const subjectColor = colorInput.value;
 
     if (!subjectName) return;
 
@@ -205,6 +231,7 @@ async function handleSubjectFormSubmit(e) {
         // Editar matéria existente
         const subject = appState.subjects.find(s => s.id === idInput.value);
         subject.nome = subjectName;
+        subject.cor = subjectColor;
         const updated = await updateSubject(idInput.value, subject);
         if (updated) {
             await loadSubjects();
@@ -215,7 +242,7 @@ async function handleSubjectFormSubmit(e) {
         }
     } else {
         // Adicionar nova matéria
-        const newSubject = await addSubject(subjectName);
+        const newSubject = await addSubject(subjectName, subjectColor);
         if (newSubject) {
             await loadSubjects();
             closeModal('subject-modal');
@@ -254,8 +281,21 @@ async function handleDeleteSubject(subjectId, subjectName) {
  */
 function calculateTrimesterGrade(evaluations) {
     if (!evaluations || evaluations.length === 0) return null;
-    const sum = evaluations.reduce((acc, eval) => acc + parseFloat(eval.nota), 0);
-    return sum / evaluations.length;
+    
+    let totalValue = 0;
+    let totalGrade = 0;
+    
+    evaluations.forEach(eval => {
+        const value = parseFloat(eval.valor || 100); // Valor padrão 100 para avaliações antigas
+        const grade = parseFloat(eval.nota);
+        totalValue += value;
+        totalGrade += grade;
+    });
+    
+    if (totalValue === 0) return null;
+    
+    // Calcula a média: (total de pontos obtidos / total de pontos possíveis) * 100
+    return (totalGrade / totalValue) * 100;
 }
 
 /**
@@ -276,14 +316,16 @@ function getGradeColor(grade) {
  * @returns {number} Pontuação anual
  */
 function calculateAnnualScore(subject) {
-    let total = 0;
+    let totalGrades = 0;
+    let trimesterCount = 0;
     for (let i = 1; i <= 3; i++) {
         const grade = calculateTrimesterGrade(subject.trimestres[i.toString()]?.avaliacoes || []);
         if (grade !== null) {
-            total += grade;
+            totalGrades += grade;
+            trimesterCount++;
         }
     }
-    return total;
+    return trimesterCount > 0 ? totalGrades / trimesterCount : 0;
 }
 
 /**
@@ -301,7 +343,8 @@ function calculateTrimesterAverage(trimesterNumber) {
     });
     
     if (grades.length === 0) return null;
-    return grades.reduce((acc, g) => acc + g, 0) / grades.length;
+    const totalGrades = grades.reduce((acc, g) => acc + g, 0);
+    return totalGrades / grades.length;
 }
 
 /**
@@ -321,7 +364,7 @@ function calculateMinRecoveryGrade(annualScore) {
  * @returns {number} Nota final simulada
  */
 function simulateRecoveryGrade(annualScore, recoveryGrade) {
-    return (annualScore + parseFloat(recoveryGrade)) / 2;
+    return (annualScore * 3 + parseFloat(recoveryGrade) * 7) / 10;
 }
 
 // ===== RENDERIZAÇÃO DO DASHBOARD =====
@@ -338,10 +381,16 @@ function renderDashboardPage() {
     const trimesterAverage = calculateTrimesterAverage(currentTrimester);
     
     // Calcula total de pontos anuais
-    let totalAnnualPoints = 0;
+    let totalAnnualPointsSum = 0;
+    let subjectsWithAnnualScore = 0;
     appState.subjects.forEach(subject => {
-        totalAnnualPoints += calculateAnnualScore(subject);
+        const annualScore = calculateAnnualScore(subject);
+        if (annualScore > 0) { // Considera apenas matérias com média anual calculada
+            totalAnnualPointsSum += annualScore;
+            subjectsWithAnnualScore++;
+        }
     });
+    const averageAnnualScore = subjectsWithAnnualScore > 0 ? totalAnnualPointsSum / subjectsWithAnnualScore : 0;
 
     // Conta matérias por status
     let greenCount = 0, yellowCount = 0, redCount = 0;
@@ -382,7 +431,7 @@ function renderDashboardPage() {
                     <h3>Pontuação Anual Total</h3>
                     <i class="fa-solid fa-trophy"></i>
                 </div>
-                <div class="card-value">${totalAnnualPoints.toFixed(0)}</div>
+                <div class="card-value">${averageAnnualScore.toFixed(1)}</div>
                 <div class="card-label">Soma de todas as matérias</div>
             </div>
 
@@ -452,10 +501,9 @@ function renderPerformanceChart() {
 
     const labels = appState.subjects.map(s => s.nome);
     const data = appState.subjects.map(s => calculateAnnualScore(s));
-    const colors = data.map(score => {
-        if (score >= 180) return 'rgba(72, 187, 120, 0.8)';
-        if (score >= 120) return 'rgba(236, 201, 75, 0.8)';
-        return 'rgba(245, 101, 101, 0.8)';
+    const colors = appState.subjects.map(s => {
+        const color = s.cor || '#3b82f6'; // Cor padrão se não existir
+        return color + 'CC'; // Adiciona transparência (80%)
     });
 
     new Chart(ctx, {
@@ -650,6 +698,12 @@ function renderTrimesterCard(subject, trimesterNumber, grade) {
     const evaluations = subject.trimestres[trimesterNumber]?.avaliacoes || [];
     const gradeColor = getGradeColor(grade);
     const gradeDisplay = grade !== null ? grade.toFixed(1) : '--';
+    
+    // Calcula pontos possíveis já aplicados
+    let totalPointsUsed = 0;
+    evaluations.forEach(eval => {
+        totalPointsUsed += parseFloat(eval.valor || 0);
+    });
 
     return `
         <div class="trimester-card">
@@ -657,16 +711,31 @@ function renderTrimesterCard(subject, trimesterNumber, grade) {
                 <h3><i class="fa-solid fa-calendar-alt"></i> ${trimesterNumber}º Trimestre</h3>
                 <div class="trimester-grade ${gradeColor}">${gradeDisplay}</div>
             </div>
+            
+            <div class="points-indicator">
+                <p><strong>Pontos possíveis já aplicados:</strong> ${totalPointsUsed.toFixed(1)} de 200</p>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: ${(totalPointsUsed / 200 * 100).toFixed(1)}%"></div>
+                </div>
+            </div>
 
             <ul class="evaluations-list">
-                ${evaluations.map((evaluation, index) => `
+                ${evaluations.map((evaluation, index) => {
+                    const value = parseFloat(evaluation.valor || 100);
+                    const nota = parseFloat(evaluation.nota);
+                    return `
                     <li class="evaluation-item">
                         <div class="evaluation-info">
                             <i class="fa-solid fa-file-alt"></i>
-                            <span>${evaluation.nome}</span>
+                            <div>
+                                <span>${evaluation.nome}</span>
+                                <small style="color: var(--text-muted); display: block; margin-top: 0.25rem;">
+                                    ${nota.toFixed(1)} de ${value.toFixed(1)} pontos
+                                </small>
+                            </div>
                         </div>
                         <div style="display: flex; align-items: center; gap: 1rem;">
-                            <span class="evaluation-grade">${parseFloat(evaluation.nota).toFixed(1)}</span>
+                            <span class="evaluation-grade">${((nota / value) * 100).toFixed(1)}%</span>
                             <div class="evaluation-actions">
                                 <button class="icon-btn" onclick="openEvaluationModal('${subject.id}', '${trimesterNumber}', ${index})" title="Editar">
                                     <i class="fa-solid fa-edit"></i>
@@ -677,7 +746,8 @@ function renderTrimesterCard(subject, trimesterNumber, grade) {
                             </div>
                         </div>
                     </li>
-                `).join('')}
+                    `;
+                }).join('')}
             </ul>
 
             <button class="add-evaluation-btn" onclick="openEvaluationModal('${subject.id}', '${trimesterNumber}')">
@@ -785,23 +855,40 @@ async function openEvaluationModal(subjectId, trimester, evaluationIndex = null)
     const trimesterInput = document.getElementById('evaluation-trimester');
     const indexInput = document.getElementById('evaluation-index');
     const nameInput = document.getElementById('evaluation-name');
+    const valueInput = document.getElementById('evaluation-value');
     const gradeInput = document.getElementById('evaluation-grade');
+    const pointsUsedSpan = document.getElementById('points-used');
+    const pointsAvailableSpan = document.getElementById('points-available');
 
     subjectIdInput.value = subjectId;
     trimesterInput.value = trimester;
 
+    // Calcula pontos já usados no trimestre
+    const subject = await fetchSubjectById(subjectId);
+    const evaluations = subject.trimestres[trimester]?.avaliacoes || [];
+    let totalPointsUsed = 0;
+    evaluations.forEach((eval, idx) => {
+        if (evaluationIndex === null || idx !== evaluationIndex) {
+            totalPointsUsed += parseFloat(eval.valor || 0);
+        }
+    });
+    
+    pointsUsedSpan.textContent = totalPointsUsed.toFixed(1);
+    pointsAvailableSpan.textContent = (200 - totalPointsUsed).toFixed(1);
+
     if (evaluationIndex !== null) {
-        const subject = await fetchSubjectById(subjectId);
         const evaluation = subject.trimestres[trimester].avaliacoes[evaluationIndex];
         
         title.textContent = 'Editar Avaliação';
         indexInput.value = evaluationIndex;
         nameInput.value = evaluation.nome;
+        valueInput.value = evaluation.valor || 100; // Valor padrão se não existir
         gradeInput.value = evaluation.nota;
     } else {
         title.textContent = `Adicionar Avaliação - ${trimester}º Trimestre`;
         indexInput.value = '';
         nameInput.value = '';
+        valueInput.value = '';
         gradeInput.value = '';
     }
 
@@ -819,14 +906,30 @@ async function handleEvaluationFormSubmit(e) {
     const trimester = document.getElementById('evaluation-trimester').value;
     const index = document.getElementById('evaluation-index').value;
     const name = document.getElementById('evaluation-name').value.trim();
+    const value = parseFloat(document.getElementById('evaluation-value').value);
     const grade = parseFloat(document.getElementById('evaluation-grade').value);
 
-    if (!name || isNaN(grade) || grade < 0 || grade > 100) {
-        alert('Por favor, preencha todos os campos corretamente.');
+    if (!name || isNaN(value) || isNaN(grade) || value < 0 || grade < 0 || grade > value) {
+        alert('Por favor, preencha todos os campos corretamente. A nota obtida não pode ser maior que o valor da atividade.');
         return;
     }
 
-    const evaluation = { nome: name, nota: grade };
+    // Valida o limite de 200 pontos por trimestre
+    const subject = await fetchSubjectById(subjectId);
+    const evaluations = subject.trimestres[trimester]?.avaliacoes || [];
+    let totalPointsUsed = 0;
+    evaluations.forEach((eval, idx) => {
+        if (index === '' || idx !== parseInt(index)) {
+            totalPointsUsed += parseFloat(eval.valor || 0);
+        }
+    });
+
+    if (totalPointsUsed + value > 200) {
+        alert(`O valor da atividade excede o limite de 200 pontos por trimestre. Pontos disponíveis: ${(200 - totalPointsUsed).toFixed(1)}`);
+        return;
+    }
+
+    const evaluation = { nome: name, valor: value, nota: grade };
 
     if (index !== '') {
         // Editar avaliação existente
@@ -852,5 +955,207 @@ async function handleDeleteEvaluation(subjectId, trimester, evaluationIndex, eva
     await deleteEvaluation(subjectId, trimester, parseInt(evaluationIndex));
     await loadSubjects();
     renderSubjectDetailPage(subjectId);
+}
+
+
+
+// ===== CALENDÁRIO DE PROVAS =====
+
+/**
+ * Carrega os eventos de provas do localStorage
+ */
+function loadExamEvents() {
+    const stored = localStorage.getItem('examEvents');
+    appState.examEvents = stored ? JSON.parse(stored) : [];
+}
+
+/**
+ * Salva os eventos de provas no localStorage
+ */
+function saveExamEvents() {
+    localStorage.setItem('examEvents', JSON.stringify(appState.examEvents));
+}
+
+/**
+ * Renderiza a página do calendário de provas
+ */
+function renderCalendarPage() {
+    loadExamEvents();
+    const mainContent = document.getElementById('main-content');
+    
+    // Ordena eventos por data
+    const sortedEvents = [...appState.examEvents].sort((a, b) => new Date(a.data) - new Date(b.data));
+    
+    // Agrupa eventos por data
+    const eventsByDate = {};
+    sortedEvents.forEach(event => {
+        if (!eventsByDate[event.data]) {
+            eventsByDate[event.data] = [];
+        }
+        eventsByDate[event.data].push(event);
+    });
+    
+    mainContent.innerHTML = `
+        <div class="calendar-header">
+            <h1><i class="fa-solid fa-calendar"></i> Calendário de Provas</h1>
+            <button class="btn btn-primary" onclick="openExamEventModal()">
+                <i class="fa-solid fa-plus"></i>
+                Adicionar Evento
+            </button>
+        </div>
+        
+        <div class="calendar-container">
+            ${sortedEvents.length === 0 ? `
+                <div class="empty-state">
+                    <i class="fa-solid fa-calendar-xmark"></i>
+                    <h2>Nenhum evento cadastrado</h2>
+                    <p>Adicione eventos de provas para organizar seu calendário</p>
+                </div>
+            ` : Object.keys(eventsByDate).map(date => {
+                const formattedDate = new Date(date + 'T00:00:00').toLocaleDateString('pt-BR', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                });
+                
+                return `
+                    <div class="calendar-day">
+                        <h3 class="calendar-day-header">${formattedDate}</h3>
+                        <div class="calendar-events">
+                            ${eventsByDate[date].map((event, index) => {
+                                const subject = appState.subjects.find(s => s.id === event.materiaId);
+                                const subjectName = subject ? subject.nome : 'Matéria não encontrada';
+                                const subjectColor = subject ? subject.cor : '#3b82f6';
+                                
+                                return `
+                                    <div class="calendar-event" style="border-left: 4px solid ${subjectColor}">
+                                        <div class="event-header">
+                                            <div class="event-title">
+                                                <i class="fa-solid fa-book"></i>
+                                                <strong>${subjectName}</strong>
+                                                <span class="event-class">${event.aula}ª Aula</span>
+                                            </div>
+                                            <div class="event-actions">
+                                                <button class="icon-btn" onclick="openExamEventModal('${event.id}')" title="Editar">
+                                                    <i class="fa-solid fa-edit"></i>
+                                                </button>
+                                                <button class="icon-btn delete" onclick="handleDeleteExamEvent('${event.id}', '${subjectName}')" title="Deletar">
+                                                    <i class="fa-solid fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="event-content">
+                                            <p><strong>Conteúdo:</strong> ${event.conteudo}</p>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+            }).join('')}
+        </div>
+    `;
+}
+
+/**
+ * Abre o modal de adicionar/editar evento de prova
+ * @param {string} eventId - ID do evento (null para novo evento)
+ */
+function openExamEventModal(eventId = null) {
+    loadExamEvents();
+    const modal = document.getElementById('exam-event-modal');
+    const title = document.getElementById('exam-event-modal-title');
+    const idInput = document.getElementById('exam-event-id');
+    const dateInput = document.getElementById('exam-event-date');
+    const subjectSelect = document.getElementById('exam-event-subject');
+    const contentInput = document.getElementById('exam-event-content');
+    const classSelect = document.getElementById('exam-event-class');
+    
+    // Popula o select de matérias
+    subjectSelect.innerHTML = '<option value="">Selecione uma matéria</option>';
+    appState.subjects.forEach(subject => {
+        const option = document.createElement('option');
+        option.value = subject.id;
+        option.textContent = subject.nome;
+        subjectSelect.appendChild(option);
+    });
+    
+    if (eventId) {
+        const event = appState.examEvents.find(e => e.id === eventId);
+        if (event) {
+            title.textContent = 'Editar Evento de Prova';
+            idInput.value = eventId;
+            dateInput.value = event.data;
+            subjectSelect.value = event.materiaId;
+            contentInput.value = event.conteudo;
+            classSelect.value = event.aula;
+        }
+    } else {
+        title.textContent = 'Adicionar Evento de Prova';
+        idInput.value = '';
+        dateInput.value = '';
+        subjectSelect.value = '';
+        contentInput.value = '';
+        classSelect.value = '';
+    }
+    
+    modal.classList.add('show');
+    dateInput.focus();
+}
+
+/**
+ * Lida com o envio do formulário de evento de prova
+ */
+async function handleExamEventFormSubmit(e) {
+    e.preventDefault();
+    
+    const idInput = document.getElementById('exam-event-id');
+    const dateInput = document.getElementById('exam-event-date');
+    const subjectSelect = document.getElementById('exam-event-subject');
+    const contentInput = document.getElementById('exam-event-content');
+    const classSelect = document.getElementById('exam-event-class');
+    
+    const eventData = {
+        id: idInput.value || Date.now().toString(),
+        data: dateInput.value,
+        materiaId: subjectSelect.value,
+        conteudo: contentInput.value.trim(),
+        aula: classSelect.value
+    };
+    
+    if (!eventData.data || !eventData.materiaId || !eventData.conteudo || !eventData.aula) {
+        alert('Por favor, preencha todos os campos.');
+        return;
+    }
+    
+    if (idInput.value) {
+        // Editar evento existente
+        const index = appState.examEvents.findIndex(e => e.id === idInput.value);
+        if (index !== -1) {
+            appState.examEvents[index] = eventData;
+        }
+    } else {
+        // Adicionar novo evento
+        appState.examEvents.push(eventData);
+    }
+    
+    saveExamEvents();
+    closeModal('exam-event-modal');
+    renderCalendarPage();
+}
+
+/**
+ * Lida com a deleção de um evento de prova
+ */
+function handleDeleteExamEvent(eventId, subjectName) {
+    if (!confirm(`Tem certeza que deseja deletar o evento de prova de "${subjectName}"?`)) {
+        return;
+    }
+    
+    appState.examEvents = appState.examEvents.filter(e => e.id !== eventId);
+    saveExamEvents();
+    renderCalendarPage();
 }
 

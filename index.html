@@ -24,6 +24,10 @@
                     <i class="fa-solid fa-chart-pie"></i>
                     <span>Painel Principal</span>
                 </a>
+                <a href="#" class="nav-item" data-page="calendar" id="calendar-link">
+                    <i class="fa-solid fa-calendar"></i>
+                    <span>Calendário de Provas</span>
+                </a>
                 <div class="subjects-list-container">
                     <h2>Matérias</h2>
                     <ul id="subjects-list">
@@ -58,6 +62,10 @@
                     <label for="subject-name">Nome da Matéria</label>
                     <input type="text" id="subject-name" placeholder="Ex: Matemática" required>
                 </div>
+                <div class="form-group">
+                    <label for="subject-color">Cor da Matéria</label>
+                    <input type="color" id="subject-color" value="#3b82f6" required>
+                </div>
                 <div class="form-actions">
                     <button type="button" class="btn-secondary" id="cancel-subject">Cancelar</button>
                     <button type="submit" class="btn-primary">Salvar</button>
@@ -80,11 +88,61 @@
                     <input type="text" id="evaluation-name" placeholder="Ex: Prova 1" required>
                 </div>
                 <div class="form-group">
-                    <label for="evaluation-grade">Nota (0-100)</label>
-                    <input type="number" id="evaluation-grade" min="0" max="100" step="0.1" placeholder="Ex: 85.5" required>
+                    <label for="evaluation-value">Valor da Atividade (pontos)</label>
+                    <input type="number" id="evaluation-value" min="0" max="200" step="0.1" placeholder="Ex: 50" required>
+                </div>
+                <div class="form-group">
+                    <label for="evaluation-grade">Nota Obtida (pontos)</label>
+                    <input type="number" id="evaluation-grade" min="0" max="200" step="0.1" placeholder="Ex: 40" required>
+                </div>
+                <div class="form-info" id="points-info">
+                    <p><strong>Pontos possíveis já aplicados:</strong> <span id="points-used">0</span> de 200</p>
+                    <p><strong>Pontos disponíveis:</strong> <span id="points-available">200</span></p>
                 </div>
                 <div class="form-actions">
                     <button type="button" class="btn-secondary" id="cancel-evaluation">Cancelar</button>
+                    <button type="submit" class="btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para Adicionar Evento de Prova -->
+    <div class="modal" id="exam-event-modal">
+        <div class="modal-content">
+            <span class="close-button" id="close-exam-event-modal">&times;</span>
+            <h2 id="exam-event-modal-title">Adicionar Evento de Prova</h2>
+            <form id="exam-event-form">
+                <input type="hidden" id="exam-event-id">
+                <div class="form-group">
+                    <label for="exam-event-date">Data da Prova</label>
+                    <input type="date" id="exam-event-date" required>
+                </div>
+                <div class="form-group">
+                    <label for="exam-event-subject">Matéria</label>
+                    <select id="exam-event-subject" required>
+                        <option value="">Selecione uma matéria</option>
+                        <!-- Matérias serão inseridas dinamicamente aqui -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="exam-event-content">Conteúdo da Prova</label>
+                    <textarea id="exam-event-content" rows="3" placeholder="Ex: Capítulos 1-5, Equações de 2º grau" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="exam-event-class">Qual aula?</label>
+                    <select id="exam-event-class" required>
+                        <option value="">Selecione a aula</option>
+                        <option value="1">1ª Aula</option>
+                        <option value="2">2ª Aula</option>
+                        <option value="3">3ª Aula</option>
+                        <option value="4">4ª Aula</option>
+                        <option value="5">5ª Aula</option>
+                        <option value="6">6ª Aula</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" id="cancel-exam-event">Cancelar</button>
                     <button type="submit" class="btn-primary">Salvar</button>
                 </div>
             </form>

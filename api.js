@@ -43,11 +43,13 @@ async function fetchSubjectById(id) {
 /**
  * Adiciona uma nova matéria
  * @param {string} subjectName - Nome da matéria
+ * @param {string} subjectColor - Cor da matéria (hex)
  * @returns {Promise<Object|null>} Objeto da nova matéria ou null
  */
-async function addSubject(subjectName) {
+async function addSubject(subjectName, subjectColor = '#3b82f6') {
     const newSubjectData = {
         nome: subjectName,
+        cor: subjectColor,
         trimestres: {
             "1": { avaliacoes: [] },
             "2": { avaliacoes: [] },
