@@ -128,21 +128,19 @@ function renderSubjectsMenu() {
     listElement.innerHTML = '';
 
     if (appState.subjects.length === 0) {
-        listElement.innerHTML = '<li style="padding: 1rem; color: var(--text-muted); text-align: center; font-size: 0.9rem;">Nenhuma matéria cadastrada</li>';
+        listElement.innerHTML = '<li class="text-text-light-secondary dark:text-text-dark-secondary text-xs text-center py-4">Nenhuma matéria cadastrada</li>';
         return;
     }
 
     appState.subjects.forEach(subject => {
         const li = document.createElement('li');
         li.className = 'subject-item';
+        const subjectColor = subject.cor || '#0d7ff2';
         li.innerHTML = `
-            <a href="#" class="nav-item" data-subject-id="${subject.id}">
-                <i class="fa-solid fa-book"></i>
-                <span>${subject.nome}</span>
+            <a href="#" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-primary/10 dark:hover:bg-primary/20 text-text-light-secondary dark:text-text-dark-secondary hover:text-primary dark:hover:text-primary transition-colors cursor-pointer" data-subject-id="${subject.id}" style="--subject-color: ${subjectColor}">
+                <span class="material-symbols-outlined" style="color: ${subjectColor}">book</span>
+                <span class="text-sm font-medium">${subject.nome}</span>
             </a>
-            <button class="delete-subject" data-subject-id="${subject.id}" title="Deletar matéria">
-                <i class="fa-solid fa-trash"></i>
-            </button>
         `;
 
         // Event listener para navegar para detalhes
@@ -150,13 +148,6 @@ function renderSubjectsMenu() {
         link.addEventListener('click', (e) => {
             e.preventDefault();
             navigateTo('subject-detail', subject.id);
-        });
-
-        // Event listener para deletar
-        const deleteBtn = li.querySelector('.delete-subject');
-        deleteBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            handleDeleteSubject(subject.id, subject.nome);
         });
 
         listElement.appendChild(li);
@@ -181,15 +172,15 @@ function openSubjectModal(subjectId = null) {
         title.textContent = 'Editar Matéria';
         idInput.value = subjectId;
         nameInput.value = subject.nome;
-        colorInput.value = subject.cor || '#3b82f6'; // Cor padrão se não existir
+        colorInput.value = subject.cor || '#0d7ff2'; // Cor padrão se não existir
     } else {
         title.textContent = 'Adicionar Nova Matéria';
         idInput.value = '';
         nameInput.value = '';
-        colorInput.value = '#3b82f6'; // Cor padrão
+        colorInput.value = '#0d7ff2'; // Cor padrão
     }
 
-    modal.classList.add('show');
+    modal.classList.remove('hidden');
     nameInput.focus();
 }
 
@@ -199,7 +190,7 @@ function openSubjectModal(subjectId = null) {
  */
 function closeModal(modalId) {
     const modal = document.getElementById(modalId);
-    modal.classList.remove('show');
+    modal.classList.add('hidden');
     
     // Limpa os formulários
     if (modalId === 'subject-modal') {
@@ -210,6 +201,9 @@ function closeModal(modalId) {
         document.getElementById('evaluation-subject-id').value = '';
         document.getElementById('evaluation-trimester').value = '';
         document.getElementById('evaluation-index').value = '';
+    } else if (modalId === 'exam-event-modal') {
+        document.getElementById('exam-event-form').reset();
+        document.getElementById('exam-event-id').value = '';
     }
 }
 

@@ -1,157 +1,214 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html class="light" lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meu Boletim - Dashboard</title>
-    <!-- Font Awesome (Ícones) -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <!-- Chart.js (Gráficos) -->
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Meu Boletim - Dashboard de Notas</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Nosso CSS -->
-    <link rel="stylesheet" href="style.css">
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#0d7ff2",
+                        "background-light": "#f8f9fa",
+                        "background-dark": "#121212",
+                        "card-light": "#ffffff",
+                        "card-dark": "#1e1e1e",
+                        "text-light-primary": "#212529",
+                        "text-light-secondary": "#6c757d",
+                        "text-dark-primary": "#eaeaea",
+                        "text-dark-secondary": "#adb5bd",
+                        "border-light": "#dbe0e6",
+                        "border-dark": "#2c2c2c",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.5rem",
+                        "lg": "0.75rem",
+                        "xl": "1rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings:
+                'FILL' 0,
+                'wght' 400,
+                'GRAD' 0,
+                'opsz' 24
+        }
+    </style>
 </head>
-<body>
-    <div class="app-container">
-        <!-- Menu Lateral (Sidebar) -->
-        <aside class="sidebar">
-            <header class="sidebar-header">
-                <i class="fa-solid fa-book-open-reader"></i>
-                <h1>Meu Boletim</h1>
-            </header>
-            <nav class="sidebar-nav">
-                <a href="#" class="nav-item active" data-page="dashboard" id="dashboard-link">
-                    <i class="fa-solid fa-chart-pie"></i>
-                    <span>Painel Principal</span>
-                </a>
-                <a href="#" class="nav-item" data-page="calendar" id="calendar-link">
-                    <i class="fa-solid fa-calendar"></i>
-                    <span>Calendário de Provas</span>
-                </a>
-                <div class="subjects-list-container">
-                    <h2>Matérias</h2>
-                    <ul id="subjects-list">
+<body class="bg-background-light dark:bg-background-dark font-display">
+<div class="relative flex h-auto min-h-screen w-full flex-col group/design-root overflow-x-hidden">
+    <div class="flex h-full grow flex-row">
+        <!-- SideNavBar -->
+        <div class="fixed flex h-full min-h-screen flex-col justify-between bg-card-light dark:bg-card-dark p-4 border-r border-border-light dark:border-border-dark w-64">
+            <div class="flex flex-col gap-8">
+                <div class="flex gap-3 items-center px-3">
+                    <div class="bg-primary rounded-full size-10 flex items-center justify-center">
+                        <span class="material-symbols-outlined text-white">school</span>
+                    </div>
+                    <h1 class="text-text-light-primary dark:text-text-dark-primary text-lg font-bold">Meu Boletim</h1>
+                </div>
+                <div class="flex flex-col gap-2">
+                    <a class="nav-item active flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/10 dark:bg-primary/20 text-primary cursor-pointer" data-page="dashboard" id="dashboard-link">
+                        <span class="material-symbols-outlined">dashboard</span>
+                        <p class="text-sm font-medium">Painel Principal</p>
+                    </a>
+                    <a class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-primary/10 dark:hover:bg-primary/20 text-text-light-secondary dark:text-text-dark-secondary hover:text-primary dark:hover:text-primary transition-colors cursor-pointer" data-page="calendar" id="calendar-link">
+                        <span class="material-symbols-outlined">calendar_month</span>
+                        <p class="text-sm font-medium">Calendário de Provas</p>
+                    </a>
+                    <p class="text-text-light-secondary dark:text-text-dark-secondary text-xs font-semibold uppercase px-3 pt-4 pb-2">Matérias</p>
+                    <ul id="subjects-list" class="flex flex-col gap-1">
                         <!-- Matérias serão inseridas dinamicamente aqui -->
                     </ul>
-                    <button class="add-subject-btn" id="add-subject-btn">
-                        <i class="fa-solid fa-plus"></i>
-                        <span>Adicionar Matéria</span>
-                    </button>
                 </div>
-            </nav>
-        </aside>
-
-        <!-- Conteúdo Principal -->
-        <main class="main-content" id="main-content">
-            <!-- O conteúdo das páginas (Dashboard, Detalhes da Matéria) será renderizado aqui -->
-            <div class="loading">
-                <i class="fa-solid fa-spinner fa-spin"></i>
-                <p>Carregando...</p>
             </div>
+            <div class="flex flex-col gap-4">
+                <button class="add-subject-btn flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-primary/90 transition-colors" id="add-subject-btn">
+                    <span class="material-symbols-outlined mr-2">add_circle</span>
+                    <span class="truncate">Adicionar Matéria</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <main class="ml-64 flex-1 p-8" id="main-content">
+            <!-- Conteúdo será inserido dinamicamente aqui -->
         </main>
     </div>
+</div>
 
-    <!-- Modal para Adicionar/Editar Matéria -->
-    <div class="modal" id="subject-modal">
-        <div class="modal-content">
-            <span class="close-button" id="close-subject-modal">&times;</span>
-            <h2 id="subject-modal-title">Adicionar Nova Matéria</h2>
-            <form id="subject-form">
-                <input type="hidden" id="subject-id">
-                <div class="form-group">
-                    <label for="subject-name">Nome da Matéria</label>
-                    <input type="text" id="subject-name" placeholder="Ex: Matemática" required>
-                </div>
-                <div class="form-group">
-                    <label for="subject-color">Cor da Matéria</label>
-                    <input type="color" id="subject-color" value="#3b82f6" required>
-                </div>
-                <div class="form-actions">
-                    <button type="button" class="btn-secondary" id="cancel-subject">Cancelar</button>
-                    <button type="submit" class="btn-primary">Salvar</button>
-                </div>
-            </form>
+<!-- Modal para Adicionar/Editar Matéria -->
+<div class="modal fixed inset-0 bg-black/50 z-40 hidden" id="subject-modal">
+    <div class="modal-content fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-card-light dark:bg-card-dark rounded-xl shadow-lg w-full max-w-md z-50">
+        <div class="p-6 border-b border-border-light dark:border-border-dark flex justify-between items-center">
+            <h2 class="text-xl font-semibold text-text-light-primary dark:text-text-dark-primary" id="subject-modal-title">Adicionar Matéria</h2>
+            <button class="text-text-light-secondary dark:text-text-dark-secondary hover:text-text-light-primary dark:hover:text-text-dark-primary" id="close-subject-modal">
+                <span class="material-symbols-outlined">close</span>
+            </button>
         </div>
+        <form id="subject-form" class="p-6 space-y-4">
+            <input type="hidden" id="subject-id">
+            <div>
+                <label class="text-sm font-medium text-text-light-secondary dark:text-text-dark-secondary" for="subject-name">Nome da Matéria</label>
+                <input class="w-full mt-2 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg focus:ring-2 focus:ring-primary text-text-light-primary dark:text-text-dark-primary px-3 py-2" id="subject-name" placeholder="Ex: Matemática" required>
+            </div>
+            <div>
+                <label class="text-sm font-medium text-text-light-secondary dark:text-text-dark-secondary" for="subject-color">Cor da Matéria</label>
+                <input class="w-full mt-2 h-10 rounded-lg cursor-pointer" id="subject-color" type="color" value="#0d7ff2" required>
+            </div>
+            <div class="flex gap-4 pt-4">
+                <button type="button" class="flex-1 px-4 py-2 rounded-lg text-text-light-secondary dark:text-text-dark-secondary hover:bg-background-light dark:hover:bg-background-dark" id="cancel-subject">Cancelar</button>
+                <button type="submit" class="flex-1 px-4 py-2 rounded-lg bg-primary text-white font-semibold hover:bg-primary/90 transition-colors">Salvar</button>
+            </div>
+        </form>
     </div>
+</div>
 
-    <!-- Modal para Adicionar/Editar Avaliação -->
-    <div class="modal" id="evaluation-modal">
-        <div class="modal-content">
-            <span class="close-button" id="close-evaluation-modal">&times;</span>
-            <h2 id="evaluation-modal-title">Adicionar Avaliação</h2>
-            <form id="evaluation-form">
-                <input type="hidden" id="evaluation-subject-id">
-                <input type="hidden" id="evaluation-trimester">
-                <input type="hidden" id="evaluation-index">
-                <div class="form-group">
-                    <label for="evaluation-name">Nome da Avaliação</label>
-                    <input type="text" id="evaluation-name" placeholder="Ex: Prova 1" required>
-                </div>
-                <div class="form-group">
-                    <label for="evaluation-value">Valor da Atividade (pontos)</label>
-                    <input type="number" id="evaluation-value" min="0" max="200" step="0.1" placeholder="Ex: 50" required>
-                </div>
-                <div class="form-group">
-                    <label for="evaluation-grade">Nota Obtida (pontos)</label>
-                    <input type="number" id="evaluation-grade" min="0" max="200" step="0.1" placeholder="Ex: 40" required>
-                </div>
-                <div class="form-info" id="points-info">
-                    <p><strong>Pontos possíveis já aplicados:</strong> <span id="points-used">0</span> de 200</p>
-                    <p><strong>Pontos disponíveis:</strong> <span id="points-available">200</span></p>
-                </div>
-                <div class="form-actions">
-                    <button type="button" class="btn-secondary" id="cancel-evaluation">Cancelar</button>
-                    <button type="submit" class="btn-primary">Salvar</button>
-                </div>
-            </form>
+<!-- Modal para Adicionar/Editar Avaliação -->
+<div class="modal fixed inset-0 bg-black/50 z-40 hidden" id="evaluation-modal">
+    <div class="modal-content fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-card-light dark:bg-card-dark rounded-xl shadow-lg w-full max-w-md z-50">
+        <div class="p-6 border-b border-border-light dark:border-border-dark flex justify-between items-center">
+            <h2 class="text-xl font-semibold text-text-light-primary dark:text-text-dark-primary" id="evaluation-modal-title">Adicionar Avaliação</h2>
+            <button class="text-text-light-secondary dark:text-text-dark-secondary hover:text-text-light-primary dark:hover:text-text-dark-primary" id="close-evaluation-modal">
+                <span class="material-symbols-outlined">close</span>
+            </button>
         </div>
-    </div>
+        <form id="evaluation-form" class="p-6 space-y-4">
+            <input type="hidden" id="evaluation-subject-id">
+            <input type="hidden" id="evaluation-trimester">
+            <input type="hidden" id="evaluation-index">
+            
+            <div>
+                <label class="text-sm font-medium text-text-light-secondary dark:text-text-dark-secondary" for="evaluation-name">Nome da Avaliação</label>
+                <input class="w-full mt-2 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg focus:ring-2 focus:ring-primary text-text-light-primary dark:text-text-dark-primary px-3 py-2" id="evaluation-name" placeholder="Ex: Prova 1" required>
+            </div>
 
-    <!-- Modal para Adicionar Evento de Prova -->
-    <div class="modal" id="exam-event-modal">
-        <div class="modal-content">
-            <span class="close-button" id="close-exam-event-modal">&times;</span>
-            <h2 id="exam-event-modal-title">Adicionar Evento de Prova</h2>
-            <form id="exam-event-form">
-                <input type="hidden" id="exam-event-id">
-                <div class="form-group">
-                    <label for="exam-event-date">Data da Prova</label>
-                    <input type="date" id="exam-event-date" required>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="text-sm font-medium text-text-light-secondary dark:text-text-dark-secondary" for="evaluation-value">Valor da Atividade (pontos)</label>
+                    <input class="w-full mt-2 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg focus:ring-2 focus:ring-primary text-text-light-primary dark:text-text-dark-primary px-3 py-2" id="evaluation-value" min="0" max="200" step="0.1" placeholder="Ex: 100" required>
                 </div>
-                <div class="form-group">
-                    <label for="exam-event-subject">Matéria</label>
-                    <select id="exam-event-subject" required>
-                        <option value="">Selecione uma matéria</option>
-                        <!-- Matérias serão inseridas dinamicamente aqui -->
-                    </select>
+                <div>
+                    <label class="text-sm font-medium text-text-light-secondary dark:text-text-dark-secondary" for="evaluation-grade">Nota Obtida (pontos)</label>
+                    <input class="w-full mt-2 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg focus:ring-2 focus:ring-primary text-text-light-primary dark:text-text-dark-primary px-3 py-2" id="evaluation-grade" min="0" max="200" step="0.1" placeholder="Ex: 40" required>
                 </div>
-                <div class="form-group">
-                    <label for="exam-event-content">Conteúdo da Prova</label>
-                    <textarea id="exam-event-content" rows="3" placeholder="Ex: Capítulos 1-5, Equações de 2º grau" required></textarea>
-                </div>
-                <div class="form-group">
-                    <label for="exam-event-class">Qual aula?</label>
-                    <select id="exam-event-class" required>
-                        <option value="">Selecione a aula</option>
-                        <option value="1">1ª Aula</option>
-                        <option value="2">2ª Aula</option>
-                        <option value="3">3ª Aula</option>
-                        <option value="4">4ª Aula</option>
-                        <option value="5">5ª Aula</option>
-                        <option value="6">6ª Aula</option>
-                    </select>
-                </div>
-                <div class="form-actions">
-                    <button type="button" class="btn-secondary" id="cancel-exam-event">Cancelar</button>
-                    <button type="submit" class="btn-primary">Salvar</button>
-                </div>
-            </form>
+            </div>
+
+            <div class="form-info bg-background-light dark:bg-background-dark p-4 rounded-lg border border-border-light dark:border-border-dark" id="points-info">
+                <p class="text-sm text-text-light-secondary dark:text-text-dark-secondary"><strong>Pontos possíveis já aplicados:</strong> <span id="points-used">0</span> de 200</p>
+                <p class="text-sm text-text-light-secondary dark:text-text-dark-secondary"><strong>Pontos disponíveis:</strong> <span id="points-available">200</span></p>
+            </div>
+
+            <div class="flex gap-4 pt-4">
+                <button type="button" class="flex-1 px-4 py-2 rounded-lg text-text-light-secondary dark:text-text-dark-secondary hover:bg-background-light dark:hover:bg-background-dark" id="cancel-evaluation">Cancelar</button>
+                <button type="submit" class="flex-1 px-4 py-2 rounded-lg bg-primary text-white font-semibold hover:bg-primary/90 transition-colors">Salvar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal para Adicionar Evento de Prova -->
+<div class="modal fixed inset-0 bg-black/50 z-40 hidden" id="exam-event-modal">
+    <div class="modal-content fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-card-light dark:bg-card-dark rounded-xl shadow-lg w-full max-w-md z-50">
+        <div class="p-6 border-b border-border-light dark:border-border-dark flex justify-between items-center">
+            <h2 class="text-xl font-semibold text-text-light-primary dark:text-text-dark-primary" id="exam-event-modal-title">Adicionar Evento de Prova</h2>
+            <button class="text-text-light-secondary dark:text-text-dark-secondary hover:text-text-light-primary dark:hover:text-text-dark-primary" id="close-exam-event-modal">
+                <span class="material-symbols-outlined">close</span>
+            </button>
         </div>
+        <form id="exam-event-form" class="p-6 space-y-4">
+            <input type="hidden" id="exam-event-id">
+            <div>
+                <label class="text-sm font-medium text-text-light-secondary dark:text-text-dark-secondary" for="exam-event-date">Data da Prova</label>
+                <input class="w-full mt-2 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg focus:ring-2 focus:ring-primary text-text-light-primary dark:text-text-dark-primary px-3 py-2" id="exam-event-date" type="date" required>
+            </div>
+            <div>
+                <label class="text-sm font-medium text-text-light-secondary dark:text-text-dark-secondary" for="exam-event-subject">Matéria</label>
+                <select class="w-full mt-2 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg focus:ring-2 focus:ring-primary text-text-light-primary dark:text-text-dark-primary px-3 py-2" id="exam-event-subject" required>
+                    <option value="">Selecione uma matéria</option>
+                </select>
+            </div>
+            <div>
+                <label class="text-sm font-medium text-text-light-secondary dark:text-text-dark-secondary" for="exam-event-content">Conteúdo da Prova</label>
+                <textarea class="w-full mt-2 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg focus:ring-2 focus:ring-primary text-text-light-primary dark:text-text-dark-primary px-3 py-2" id="exam-event-content" rows="3" placeholder="Ex: Capítulos 1-5, Equações de 2º grau" required></textarea>
+            </div>
+            <div>
+                <label class="text-sm font-medium text-text-light-secondary dark:text-text-dark-secondary" for="exam-event-class">Qual aula?</label>
+                <select class="w-full mt-2 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg focus:ring-2 focus:ring-primary text-text-light-primary dark:text-text-dark-primary px-3 py-2" id="exam-event-class" required>
+                    <option value="">Selecione a aula</option>
+                    <option value="1">1ª Aula</option>
+                    <option value="2">2ª Aula</option>
+                    <option value="3">3ª Aula</option>
+                    <option value="4">4ª Aula</option>
+                    <option value="5">5ª Aula</option>
+                    <option value="6">6ª Aula</option>
+                </select>
+            </div>
+            <div class="flex gap-4 pt-4">
+                <button type="button" class="flex-1 px-4 py-2 rounded-lg text-text-light-secondary dark:text-text-dark-secondary hover:bg-background-light dark:hover:bg-background-dark" id="cancel-exam-event">Cancelar</button>
+                <button type="submit" class="flex-1 px-4 py-2 rounded-lg bg-primary text-white font-semibold hover:bg-primary/90 transition-colors">Salvar</button>
+            </div>
+        </form>
     </div>
+</div>
 
-    <!-- Nossos Scripts -->
-    <script src="api.js"></script>
-    <script src="main.js"></script>
+<!-- Scripts -->
+<script src="api.js"></script>
+<script src="main.js"></script>
 </body>
 </html>
 
